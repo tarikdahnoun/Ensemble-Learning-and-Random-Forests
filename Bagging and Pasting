@@ -1,0 +1,33 @@
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import BaggingClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.datasets import load_iris
+
+iris = load_iris()
+X = iris.data[:, 2:]  # petal length, petal width
+y = iris.target
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2)
+
+bag_clf = BaggingClassifier(
+    DecisionTreeClassifier(), n_estimators=500,
+    max_samples=100, bootstrap=True, n_jobs=-1
+)
+
+bag_clf.fit(X_train, y_train)
+y_pred = bag_clf.predict(X_val)
+print("Bag CLF: ", accuracy_score(y_val, y_pred))
+# Thats 97% accuracy
+
+
+# Or we can allow out of bag evaluation
+
+bag_clf = BaggingClassifier(
+    DecisionTreeClassifier(), n_estimators=500,
+    bootstrap=True, n_jobs=-1, oob_score=True
+)
+
+bag_clf.fit(X_train, y_train)
+y_pred = bag_clf.predict(X_val)
+print("oob eval: ", bag_clf.oob_score_)
+print("Bagging with OOB eval: ", accuracy_score(y_val, y_pred))
