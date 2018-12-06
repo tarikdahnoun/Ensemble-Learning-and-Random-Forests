@@ -1,0 +1,52 @@
+from sklearn.datasets import load_iris
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import AdaBoostClassifier
+
+ada_clf = AdaBoostClassifier(
+    DecisionTreeClassifier(max_depth=1), n_estimators=200,
+    algorithm='SAMME.R', learning_rate=0.5
+)
+iris = load_iris()
+ada_clf.fit(iris["data"], iris["target"])
+
+# or we can use Gradient Boosting Regressor
+from sklearn.ensemble import GradientBoostingRegressor
+
+gbrt = GradientBoostingRegressor(max_depth=2, n_estimators=3, learning_rate=1.0)
+gbrt.fit(iris["data"], iris["target"])
+
+# But this is likely to overfit, so we need to implement early stopping.
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+X, y = iris["data"], iris["target"]
+X_train, X_val, y_train, y_val = train_test_split(X, y)
+
+gbrt = GradientBoostingRegressor(max_depth=2, n_estimators=120)
+gbrt.fit(X_train, y_train)
+
+errors = [mean_squared_error(y_val, y_pred)
+          for y_pred in gbrt.staged_predict(X_val)]
+bst_n_estimators = np.argmin(errors)
+
+gbrt_best = GradientBoostingRegressor(max_depth=2, n_estimators=bst_n_estimators)
+gbrt.fit(X_train, y_train)
+
+# Or, another early stopping method is to stop evolving if validation error doesnt really improve over 5 iterations
+gbrt = GradientBoostingRegressor(max_depth=2, warm_start=True)
+
+min_val_error = float('inf')
+error_going_up = 0
+for n_estimators in range(1, 120):
+    gbrt.n_estimators = n_estimators
+    gbrt.fit(X_train, y_train)
+    y_pred = gbrt.predict(X_val)
+    val_error = mean_squared_error(y_val, y_pred)
+    if val_error < min_val_error:
+        min_val_error = val_error
+        error_going_up = 0
+    else:
+        error_going_up += 1
+        if error_going_up == 5:
+            break  # Early Stop
+            
