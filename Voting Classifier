@@ -1,0 +1,28 @@
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import VotingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.datasets import make_moons
+from sklearn.metrics import accuracy_score
+
+
+X_train, X_val, y_train, y_val = train_test_split(make_moons()[0], make_moons()[1], test_size=0.2)
+rnd_clf = RandomForestClassifier()
+log_clf = LogisticRegression()
+svm_clf = SVC()
+
+voting_clf = VotingClassifier(
+    estimators=[('lr', log_clf), ('rf', rnd_clf), ('svc', svm_clf)],
+    voting='hard'
+)
+
+# voting_clf.fit(X_train, y_train)
+# rnd_clf.fit(X_train, y_train)
+# y_pred = rnd_clf.predict(X_val)
+
+# print("Random Forest Classifier: ", accuracy_score(y_val, y_pred))
+for clf in (rnd_clf, log_clf, svm_clf, voting_clf):
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_val)
+    print(clf.__class__.__name__, accuracy_score(y_val, y_pred))
